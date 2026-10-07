@@ -1,6 +1,7 @@
 import plotly.express as px
 import pandas as pd
 import plotly.io as pio
+import matplotlib.pyplot as plt
 pio.renderers.default = "browser"
 
 
@@ -124,5 +125,55 @@ fig.show()
 
 
 
+###
+# nots exploration
+# import nots
+nots.columns
+nots.size
+
+# check for duplicates ## no duplicates
+#nots = nots.sort_values(by=['Review Start Date'], ascending=[False])
+#print("nots original length:", len(nots.index))
+#nots = nots.drop_duplicates()
+#print("nots no duplicates length:", len(nots.index)) 
+
+## should drop microbial cases ('J-')
+
+#plotting nots timeline
+#currently opens browser for interactivity (IDE option available)
+test_nots = nots.sample(frac=0.5)
+fig = px.timeline(test_nots, x_start='Review Start Date', x_end='Decision Date', y="Case Number")
+fig.show()
 
 
+# how long do these reviews take?
+nots['Review Start Date'] = pd.to_datetime(nots['Review Start Date'])
+nots['Decision Date'] = pd.to_datetime(nots['Decision Date'])
+nots['duration'] = nots['Decision Date'] - nots['Review Start Date']
+nots['duration'] = nots['duration'].dt.days.astype('int')
+# reviews less than 90 days
+nots[nots['duration']<=90].size
+# reviews more than 90 days
+nots[nots['duration']>90].size
+
+# plot a histogram of timelines
+plt.hist(nots['duration'], bins=40)
+plt.vlines(90, 0, 200, color='red')
+plt.ylim(0, 175)
+
+# pmns - chemview
+# check for duplicates 
+print("pmns original length:", len(pmns.index))
+pmns = pmns.drop_duplicates()
+print("pmns no duplicates length:", len(pmns.index)) ## lots of duplicates
+
+# see what happens if we combine case numbers with "A" or other suffixes
+pmns['Case Number'] = pmns['Case Number'].map(lambda x: x[0:9]) # this doesn't work for cases with "SN" prefix but is ok for now
+pmns['EPA Received Date'] = pd.to_datetime(pmns['EPA Received Date'])
+pmns['EPA Approval Date'] = pd.to_datetime(pmns['EPA Approval Date'])
+
+# plot in timeline format with 'Version' as the color
+# select a subset of cases with a lot of versions
+test_pmns = pmns.sort_values(by='Version', ascending=False).head(75)
+fig = px.timeline(test_pmns, x_start="EPA Received Date", x_end="EPA Approval Date", y="Case Number", color="Version")
+fig.show()
